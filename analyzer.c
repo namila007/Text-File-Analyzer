@@ -6,6 +6,8 @@ E/14/084
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <ctype.h>
 
 #define READ "r"
 #define SIZE 1000
@@ -14,7 +16,6 @@ E/14/084
 #define FILLDOTS "░"
 #define MAX_WIDTH 80
 #define NORMAL_WIDTH 10
-
 #define SPACEREDUCE 3
 
 
@@ -34,6 +35,7 @@ void readfile(char *filepath,int printmode);
 int nodelength();
 void sortnodes();
 void reversenodes();
+void reversefilename();
 int maxlenword(int printlength);
 void printchart(int printlength,int scale);
 
@@ -41,12 +43,15 @@ void printchart(int printlength,int scale);
 linklist *head=NULL;   //making head and current null for words
 linklist *current=NULL;
 
-linklist *filehead=NULL;
+linklist *filehead=NULL; //making head for file inserts
 linklist *filecurrent=NULL;
 
-int totalcount=0;
+int totalcount=0; //total amount of words/chars in files
+
 
 int nodelength(){
+	/*finding the node amounts
+	*/
 	int length=0;;
 	linklist * current;
 	current=head;
@@ -59,9 +64,11 @@ int nodelength(){
 }
 
 int maxlenword(int printlength){
+	/* finding maximum length of the word in the list
+	*/
 	linklist *ptr = head;
-   int i=0;
-   int maxlen=0;
+	int i=0;
+	int maxlen=0;
 	
    //start from the beginning
  	  while(i<printlength) {
@@ -82,6 +89,8 @@ int maxlenword(int printlength){
 
 
 void printchart(int printlength,int scale){
+	/*function for printing chart
+	*/
 	linklist *ptr = head;
 	int graph_area;
 	int maxlen=maxlenword(printlength);
@@ -101,10 +110,11 @@ void printchart(int printlength,int scale){
 	if(average>0 && average<10) PERCENTAGE_WIDTH=5;
 	else if(average>=10 && average<100) PERCENTAGE_WIDTH=6;
 	else PERCENTAGE_WIDTH=7;
-
+	//^^making sizes for percentage values
 
 	graph_area=MAX_WIDTH-(SPACEREDUCE+ maxlen+PERCENTAGE_WIDTH);
 	printf("%*s\n",MAX_WIDTH,"");
+
 	while(i<printlength){
 		
 		average=((double)(ptr->count)/(double)totalcount)*100*scalesize;
@@ -112,34 +122,35 @@ void printchart(int printlength,int scale){
 		char *string=ptr->string;
 		wordspace=(maxlen+1)-strlen(string);
 		barsize=(int)((graph_area*average)/100);
-		//printf("%s %d \n",ptr->string,wordspace);
 		
-		//printf("%d\n",barsize );
+		
 		//first bar
-		
-		
 		printf("%*s%s",(maxlen+2)," ",verticlebar);
-		for(k=0;k<barsize;k++){
+		for(k=0;k<barsize;k++)
+		{
 			printf("%s",FILLDOTS );
 		}
 		printf("\n");	
 
-		//second bar	
-		
+			
+		//second bar
 		printf("%s%s%*s%s"," ",string,wordspace," ",verticlebar );
-		for(k=0;k<barsize;k++){
+		for(k=0;k<barsize;k++)
+		{
 			printf("%s",FILLDOTS );
 		}
 			printf("%.2lf%s\n",average/scalesize,"%");
 
 
-
+		//third bar,same as first bar
 		printf("%*s%s",(maxlen+2)," ",verticlebar);
-		for(k=0;k<barsize;k++){
+		for(k=0;k<barsize;k++)
+		{
 			printf("%s",FILLDOTS );
 		}
-			printf("\n");
+		printf("\n");
 
+		//printing space for next chart
 		printf("%*s%s%*s\n",maxlen+2," ",verticlebar,MAX_WIDTH-(maxlen+2)," " );
 
 		
@@ -152,42 +163,21 @@ void printchart(int printlength,int scale){
 
 
 		}
+		//printing ending lines
 		printf("%*s%s",maxlen+2," ","└" );
-		//printf("%*s\n",maxlen+2,"└");
-		//printf("%*s%*s\n",maxlen+2," ",MAX_WIDTH-maxlen-2,"-");
-		for(k=1;k<graph_area+PERCENTAGE_WIDTH+1;k++){
+		
+		for(k=1;k<graph_area+PERCENTAGE_WIDTH+1;k++)
+		{
 			printf("%s",horizontalbar );
 		}
 			printf("\n");
 
-
-
-
 }
 
-void printList(int printlength) {
-   linklist *ptr = filehead;
-   int i=0;
-	
-   //start from the beginning
- 	  while(i<printlength) {
-
-        printf("%s  ",ptr->string);
-      // double t=ptr->count;
-     
-       // printf("average:%.02lf\n",(double)(t/totalcount)*100);
-        ptr = ptr->next;
-
-        i++;
-        if(ptr== NULL  )break;
-     
- 		}
-	
-  
-}
 
 void reversenodes(){
-linklist *nextnode,*current,*prevnode;
+	//reversing inserted words/chars
+	linklist *nextnode,*current,*prevnode;
 	current=head;
 	prevnode=NULL;
 
@@ -202,8 +192,26 @@ linklist *nextnode,*current,*prevnode;
 
 }
 
+void reversefilename(){
+	//reversing filename
+	linklist *nextnode,*current,*prevnode;
+	current=filehead;
+	prevnode=NULL;
+
+	while(current!=NULL){
+		nextnode=current->next;
+		current->next=prevnode;
+		prevnode=current;
+		current=nextnode;
+	}
+	
+	filehead=prevnode;
+
+}
+
 
 void sortnodes(){
+	//sorting nodes from highest to lowers
 	linklist *current, *nextnode;
 	int i,j,k,nodesize,count;
 	char *tempstring;
@@ -218,20 +226,21 @@ void sortnodes(){
 		for(j=1;j<k;j++){
 			if(nextnode->count>current->count){
 				int strlength=strlen(nextnode->string);
-				tempstring=(char*)malloc((strlength+1)*sizeof(char));
+				tempstring=(char*)malloc((strlength+1));
 				
 
 				strcpy(tempstring,nextnode->string);
 				count=nextnode->count;
 
 				nextnode->string=realloc(nextnode->string,(strlen(current->string)+1));
+
 				strcpy(nextnode->string,current->string);
 				nextnode->count=current->count;
 
 				current->string=realloc(current->string,(strlen(tempstring)+1));
 				strcpy(current->string,tempstring);
 				current->count=count;
-				free(tempstring);
+				//free(tempstring);
 			}
 
 			current = current->next;
@@ -242,19 +251,17 @@ void sortnodes(){
 
 
 }
-char* removesign(char *string){
 
-
-}
 
 
 char* removeNonAlphaNum(char *str)
 {
+	//removing non alpha chars and lower capital letters
     int i = 0, j = 0;
-    int arraysize=strlen(str)+1;
+    
     char c;
-    char *temp=malloc(arraysize+1);
-    	//printf("%s %d\n",str,arraysize-1 );
+    char *temp=malloc(strlen(str)+1);
+    	
     if(!temp){
     	printf("%s\n","Error allocating memory");
     	exit(1);
@@ -263,41 +270,40 @@ char* removeNonAlphaNum(char *str)
     for(i=0;str[i]!='\0';i++){
         c=str[i];
       	
-        if(isalnum(c) && !isspace(c) && !iscntrl(c) && c!=45){
+        if(isalnum(c) && !isspace(c) && !iscntrl(c)){
         	
-        	if(c>='A' && c<='Z'){
+        	
         	c=tolower(c);
-        	}
-            temp[j]=c;
-            // printf("%c%d %d ",c,i,j );
-            j++;
+        	
+            temp[j++]=c;
             
-        }
+         }
         
         
     }
     temp[j++]='\0';
-   // printf("%c%d %d ",c,i,j );
+   
      char* tempreturn=malloc((strlen(temp)+1));
     i=0,j=0;
 
     for(i=0;i<=strlen(temp);i++,j++){
     	tempreturn[j]=temp[i];
     }
-    tempreturn[j+1]='\0';
-    //printf(" temp :%sreturn%d\n",temp,(int)strlen(tempreturn) );
-    
+    tempreturn[j++]='\0';
+        
    
     	//free(temp);
 	
    
    
-//    return str;
+
     return tempreturn;
 }
 
 linklist* find(char* string){
-	 current=head;
+	/*searching the link list ,if the word is already insert,otherwise
+	creating a new one*/
+	current=head;
 
 	if(head==NULL){
 		return NULL;
@@ -317,17 +323,15 @@ linklist* find(char* string){
 
 
 void insertdata(char* string){
-	//printf("%s\n",string );
+	/*inserting data for link list*/
 	char *temp=removeNonAlphaNum(string);
 	
 	if(strlen(temp) > 0)
 	{
-		//printf("%d new len\n",(int)strlen(temp) );
-		
 		current=find(temp);
 	
 	if(current==NULL){
-		linklist *link=(linklist*)malloc (sizeof(link));
+		linklist* link=(linklist*)malloc(sizeof(link));
 
 		link->string=temp;
 		link->count=1;
@@ -354,55 +358,54 @@ void insertdata(char* string){
 
 
 void readfile(char *filepath,int printmode){
+	/* reading files*/
 	char string[SIZE];
-	
 	FILE *fp;
 	char c;
 	
-	
-		
-		if(!filepath){
-			exit(EXIT_FAILURE);
-		}
+	if(!filepath)
+	{
+		exit(EXIT_FAILURE);
+	}
 		fp=fopen(filepath,READ);
-
 		
-		if(printmode==1){
-			while(fscanf(fp,"%s",string)!=EOF){
+		
+	if(printmode==1)
+	{
+		while(fscanf(fp,"%s",string)!=EOF){
 
-			char *data=malloc(strlen(string)+1);
-			strcpy(data,string);
+		char *data=malloc(strlen(string)+1);
+		strcpy(data,string);
 
-			insertdata(data);
-			
-			}
-
-
-			
-		}else if(printmode==2){
-			while(fscanf(fp,"%c",&c)!=EOF){
-					char *data=malloc(3*sizeof(char));
-							data[0]=c;data[2]='\0';
-							//printf("%s\n",data );
-							insertdata(data);
-							
-						}
-			
-
+		insertdata(data);
+		
 		}
-		
-	
 
+
+			
+	}
+	else if(printmode==2)
+	{
+		while(fscanf(fp,"%c",&c)!=EOF){
+				char *data=malloc(3*sizeof(char));
+				data[0]=c;data[2]='\0';
+				insertdata(data);
+						
+					}
+	}
 
 }
 
 void insertfilename(char *filepath){
+	/* inserting file names given in args
+	*/
 	linklist *file=(linklist*)malloc (sizeof(file));
 
-		file->string=filepath;
-		
-		file->next=filehead;
-		filehead=file;
+	file->string=filepath;
+	
+	file->next=filehead;
+	filehead=file;
+	
 
 }
 
@@ -410,79 +413,116 @@ void insertfilename(char *filepath){
 
 
 int main(int argc, char **argv){
-	int printlength=10,i,printmode=1,scale=0,j=0,lenplace,flaguse1=0,flaguse2=1;       //printmode; word=1; char=2;
+	int printlength=10,i,printmode=1,scale=0,lenplace,flaguse1=0,flaguse2=1;       //printmode; word=1; char=2;
 	char *filepath;
-	FILE *fp;
+	
+	
 	for(i=0;i<argc;i++){
 		char *argvv=argv[i];
-		char *files;
+		
 		if(strcmp(argvv,"-l")==0){
 			 lenplace=i+1;
+
 			if(lenplace<argc){
+
 				printlength=atoi(argv[lenplace]);
 				if(printlength<=0){
+					//for non positive numbers
 					fprintf(stdout, "Invalid option for [-l]\n" );
 					printf("usage: freq [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n");
 				
 					exit(0);
 				}
-				/*else{
-				fprintf(stdout, "Invalid options for [-l]\n" );
-				printf("usage: freq [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n");
 				
-				exit(0);
-				}
-				*/
-			}else{
+			}
+			else{
+				//if there is no arg for length
 				fprintf(stdout, "Not enough options for [-l]\n" );
 				printf("usage: freq [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n");
 				exit(0);
 			}
 		}
 		else if(strcmp(argvv,"-w")==0){
+			//flag for word insert mode
 			printmode=1;
 			flaguse1=5;
 		}
 		else if(strcmp(argvv,"-c")==0){
+			//flag for char insert mode
 			printmode=2;
 			flaguse2=5;
 		}
 		else if(strcmp(argvv,"--scaled")==0){
+			//scaling maximum print size
 			scale=1;
 		}else if( i != 0 && i!=lenplace){
+			//inserting files
 			filepath=argv[i];
 			insertfilename(filepath);
 			
+			
+			
 		}
 		
+	
+	
 		
-		//printf("%d %d  %d\n",printlength,i ,printmode );
 	}
 	if(flaguse2==flaguse1){
+		//cant use both -w and -c modes
 		printf("[-c] and [-w] cannot use together\n");
 		printf("usage: freq [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n");
 		exit(0);
 	}
+
+	if(filehead==NULL)
+	{
+		printf("No input files were given\n");
+		printf("usage: freq [-l length] [-w | -c] [--scaled] filename1 filename2 ..\n");
+		exit(0);
+	}
+	
+	reversefilename(); //reversing inserted filenames
+	
+	struct stat statr;
 	
 	linklist *file=filehead;
 	while(file!=NULL)
-	{
-		readfile(file->string,printmode);
-		file = file->next;
-		if(file== NULL  )break;
+	{	
+		stat(file->string, &statr);
+		
+		
+		if(stat(file->string, &statr))
+		{
+			//if file cant be opened
+		printf("Cannot open one or more given files\n");
+		exit(0);
+		}
+
+		else{
+			readfile(file->string,printmode);
+			file = file->next;
+
+			if(file== NULL  )break;
+			}
 	}
+	
+	if(totalcount==0)
+	{
 
-
+        printf("No data to process\n");
+    	exit(0);
+	}
 	
 	
-	reversenodes();
-	
+	reversenodes(); 
 	sortnodes();
-	 
-	//printList(printlength);
+	
+	
 
 	printchart(printlength,scale);
 	
 
+	return 0;
 
 }
